@@ -3,57 +3,79 @@ name: Kernel CI
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write  # 关键修复：显式声明权限
+
 jobs:
   build-kernel:
     name: Build Kernel
     runs-on: ubuntu-22.04
+    timeout-minutes: 45  # 增加超时时间应对慢速网络
     env:
-      KERNEL_DIR: msm-4.4  # 关键修复：匹配内核源码目录结构
-      CONFIG_PATH: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
+      KERNEL_REPO: qgzslm/9NX563J_-kernel  # 根据图片显示修正仓库名称
+      KERNEL_BRANCH: master
+      CONFIG_TARGET: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
 
     steps:
-    - name: Checkout kernel source
+    - name: Configure Git Retry
+      run: |
+        git config --global http.postBuffer 524288000
+        git config --global https.postBuffer 524288000
+        git config --global core.compression 9
+
+    - name: Checkout Kernel Source (with retry)
       uses: actions/checkout@v4
       with:
-        repository: ztemt/NX563J_P_kernel
-        ref: master
-        path: ${{ env.KERNEL_DIR }}  # 显式指定源码存放路径
+        repository: ${{ env.KERNEL_REPO }}
+        ref: ${{ env.KERNEL_BRANCH }}
+        path: kernel_src
+        fetch-depth: 0  # 修复浅克隆问题
+        timeout-minutes: 15  # 单独设置超时
+      retry:  # 新增重试机制
+        max-attempts: 3
+        exponential-backoff: true
 
-    - name: Setup AOSP Toolchain
+    - name: Setup Android Build Environment
       uses: android-actions/setup-android-build-environment@v1
       with:
-        ndk-version: 21.4.7075529  # 确保兼容Android 12
+        ndk-version: "21.4.7075529"  # 对应图片中的Android 12
+        disable-cache: false
+      timeout-minutes: 10
 
-    - name: Verify Source Structure
+    - name: Validate Environment
       run: |
-        echo "验证关键文件存在性:"
-        ls -l ${{ env.KERNEL_DIR }}/${{ env.CONFIG_PATH }}
-        ls -l ${{ env.KERNEL_DIR }}/Makefile
-        ls -l ${{ env.KERNEL_DIR }}/scripts
+        echo "===== 关键文件验证 ====="
+        ls -l kernel_src/${{ env.CONFIG_TARGET }}
+        ls -l kernel_src/Makefile
+        echo "===== 工具链验证 ====="
+        ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --version
 
     - name: Initialize Build
-      working-directory: ${{ env.KERNEL_DIR }}  # 关键：进入源码目录
+      working-directory: kernel_src
       run: |
         make O=out ARCH=arm64 \
         CLANG_TRIPLE=aarch64-linux-gnu- \
         CROSS_COMPILE=aarch64-linux-android- \
         CC=clang \
-        msmcortex-NX563J-perf_defconfig  # 显式加载defconfig
+        msmcortex-NX563J-perf_defconfig
 
     - name: Build Kernel
-      working-directory: ${{ env.KERNEL_DIR }}
+      working-directory: kernel_src
       run: |
-        make -j$(nproc --all) O=out ARCH=arm64 \
+        make -j$(($(nproc)*2)) O=out ARCH=arm64 \
         CLANG_TRIPLE=aarch64-linux-gnu- \
         CROSS_COMPILE=aarch64-linux-android- \
         CC=clang \
         LD=ld.lld \
         NM=llvm-nm \
-        OBJCOPY=llvm-objcopy
+        OBJCOPY=llvm-objcopy \
+        KCFLAGS="-w"  # 禁用警告
 
-    - name: Artifact Upload
+    - name: Upload Artifact
       if: success()
       uses: actions/upload-artifact@v3
       with:
         name: kernel-image
-        path: ${{ env.KERNEL_DIR }}/out/arch/arm64/boot/Image.gz-dtb
+        path: kernel_src/out/arch/arm64/boot/Image.gz-dtb
+        retention-days: 3
