@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 45  # 增加超时时间应对慢速网络
     env:
-      KERNEL_REPO: qgzslm/9NX563J_-kernel  # 根据图片显示修正仓库名称
+      KERNEL_REPO: https://github.com/ztemt/NX563J_P_kernel
       KERNEL_BRANCH: master
       CONFIG_TARGET: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
 
