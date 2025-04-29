@@ -1,8 +1,5 @@
 name: CI
-
-on:
-  workflow_dispatch:
-  
+```yaml
 jobs:
 build-kernel:
  runs-on: ubuntu-22.04
@@ -31,4 +28,3 @@ build-kernel:
        source-dir: ${{ github.workspace }}/msm-4.4
        make-flags: O=out
      working-directory: msm-4.4  # 强制切换工作目录
-
