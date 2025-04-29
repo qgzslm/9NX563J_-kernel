@@ -1,30 +1,21 @@
-name: Build Kernel
+name: CI
+
 on:
   workflow_dispatch:
+
 jobs:
-  build:
-    runs-on: ubuntu-20.04  # 推荐使用旧版系统
+  build-kernel:
+    name: Build Kernel
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    
-    - name: Setup Env
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libncurses-dev git bc bison flex
-        
-    - name: Download Toolchain
-      run: |
-        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/android-9.0.0_r49.tar.gz
-        tar -xzf android-9.0.0_r49.tar.gz
-    
-    - name: Build Kernel
-      env:
-        ARCH: arm64
-        CROSS_COMPILE: ./android-9.0.0_r49/bin/aarch64-linux-android-
-        KERNEL_CONFIG: msmcorter-NX563J-perf_defconfig
-      run: |
-        cd msm-4.4
-        make $KERNEL_CONFIG
-        make -j$(nproc) || make -j1  # 若并行编译失败尝试单线程
+      - name: Build
+        uses: dabao1955/kernel_build_action@main
+        with:
+          kernel-url: https://github.com/ztemt/NX563J_P_kernel
+          kernel-branch: master
+          config: msmcortex-NX563J-perf_defconfig
+          arch: arm64
+          aosp-gcc: true
+          aosp-clang: true
+          android-version: 12
+          aosp-clang-version: r383902
