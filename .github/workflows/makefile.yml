@@ -28,7 +28,5 @@ build-kernel:
        arch: arm64
        android-version: 12
        aosp-clang-version: r383902
-       # 新增关键参数
-       source-dir: ${{ github.workspace }}/msm-4.4
        make-flags: O=out
      working-directory: msm-4.4  # 强制切换工作目录
