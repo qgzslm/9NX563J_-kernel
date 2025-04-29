@@ -13,7 +13,7 @@ jobs:
         with:
           kernel-url: https://github.com/ztemt/NX563J_P_kernel
           kernel-branch: master
-          config: msmcortex-NX563J-perf_defconfig
+          config: msm-4.4/msmcortex-NX563J-perf_defconfig
           arch: arm64
           aosp-gcc: true
           aosp-clang: true
