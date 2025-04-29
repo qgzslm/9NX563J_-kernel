@@ -11,7 +11,7 @@ jobs:
       - name: Build
         uses: dabao1955/kernel_build_action@main
         with:
-          kernel-url: https://github.com/ztemt/NX563J_P_kernel/tree/master/msm-4.4
+          kernel-url: https://github.com/ztemt/NX563J_P_kernel
           kernel-branch: master
           config: msmcortex-NX563J-perf_defconfig
           arch: arm64
