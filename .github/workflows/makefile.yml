@@ -2,26 +2,33 @@ name: CI
 
 on:
   workflow_dispatch:
-
+  
 jobs:
-  build-kernel:
-    name: Build Kernel
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+build-kernel:
+ runs-on: ubuntu-22.04
+ steps:
+   - name: Checkout with submodules
+     uses: actions/checkout@v4
+     with:
+       path: msm-4.4  # 强制将代码检出到子目录
+       submodules: recursive
 
-      - name: Build
-        uses: dabao1955/kernel_build_action@main
-        with:
-          kernel-url: https://github.com/ztemt/NX563J_P_kernel
-          kernel-branch: master
-          # 显式指定配置文件完整相对路径
-          config: msmcortex-NX563J-perf_defconfig
-          arch: arm64
-          aosp-gcc: true
-          aosp-clang: true
-          android-version: 12
-          aosp-clang-version: r383902
-          # 强制指定内核源路径
-          source-dir: msm-4.4
+   - name: Debug directory structure
+     run: |
+       pwd
+       ls -la msm-4.4
+       ls -la msm-4.4/arch/arm64/configs/
+
+   - name: Build with working directory
+     uses: dabao1955/kernel_build_action@main
+     with:
+       kernel-url: ""  # 禁用自动拉取代码
+       config: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
+       arch: arm64
+       android-version: 12
+       aosp-clang-version: r383902
+       # 新增关键参数
+       source-dir: ${{ github.workspace }}/msm-4.4
+       make-flags: O=out
+     working-directory: msm-4.4  # 强制切换工作目录
+
