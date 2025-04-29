@@ -23,7 +23,7 @@ build-kernel:
    - name: Build with working directory
      uses: dabao1955/kernel_build_action@main
      with:
-       kernel-url: ""  # 禁用自动拉取代码
+       kernel-url: https://github.com/ztemt/NX563J_P_kernel
        config: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
        arch: arm64
        android-version: 12
