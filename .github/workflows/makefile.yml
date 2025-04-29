@@ -1,4 +1,4 @@
-name: CI
+name: Kernel CI
 
 on:
   workflow_dispatch:
@@ -7,15 +7,53 @@ jobs:
   build-kernel:
     name: Build Kernel
     runs-on: ubuntu-22.04
+    env:
+      KERNEL_DIR: msm-4.4  # 关键修复：匹配内核源码目录结构
+      CONFIG_PATH: arch/arm64/configs/msmcortex-NX563J-perf_defconfig
+
     steps:
-      - name: Build
-        uses: dabao1955/kernel_build_action@main
-        with:
-          kernel-url: https://github.com/ztemt/NX563J_P_kernel
-          kernel-branch: master
-          config: arch/arm64/configs/msmcortex-NX563J-perf_defconfig  # 修正路径
-          arch: arm64
-          aosp-gcc: true
-          aosp-clang: true
-          android-version: 12
-          aosp-clang-version: r383902
+    - name: Checkout kernel source
+      uses: actions/checkout@v4
+      with:
+        repository: ztemt/NX563J_P_kernel
+        ref: master
+        path: ${{ env.KERNEL_DIR }}  # 显式指定源码存放路径
+
+    - name: Setup AOSP Toolchain
+      uses: android-actions/setup-android-build-environment@v1
+      with:
+        ndk-version: 21.4.7075529  # 确保兼容Android 12
+
+    - name: Verify Source Structure
+      run: |
+        echo "验证关键文件存在性:"
+        ls -l ${{ env.KERNEL_DIR }}/${{ env.CONFIG_PATH }}
+        ls -l ${{ env.KERNEL_DIR }}/Makefile
+        ls -l ${{ env.KERNEL_DIR }}/scripts
+
+    - name: Initialize Build
+      working-directory: ${{ env.KERNEL_DIR }}  # 关键：进入源码目录
+      run: |
+        make O=out ARCH=arm64 \
+        CLANG_TRIPLE=aarch64-linux-gnu- \
+        CROSS_COMPILE=aarch64-linux-android- \
+        CC=clang \
+        msmcortex-NX563J-perf_defconfig  # 显式加载defconfig
+
+    - name: Build Kernel
+      working-directory: ${{ env.KERNEL_DIR }}
+      run: |
+        make -j$(nproc --all) O=out ARCH=arm64 \
+        CLANG_TRIPLE=aarch64-linux-gnu- \
+        CROSS_COMPILE=aarch64-linux-android- \
+        CC=clang \
+        LD=ld.lld \
+        NM=llvm-nm \
+        OBJCOPY=llvm-objcopy
+
+    - name: Artifact Upload
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: kernel-image
+        path: ${{ env.KERNEL_DIR }}/out/arch/arm64/boot/Image.gz-dtb
