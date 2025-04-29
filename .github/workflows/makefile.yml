@@ -1,5 +1,5 @@
 name: CI
-```yaml
+
 jobs:
 build-kernel:
  runs-on: ubuntu-22.04
