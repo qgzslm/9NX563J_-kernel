@@ -2,14 +2,17 @@ name: CI
 
 on:
   workflow_dispatch:
+
 jobs:
   build-kernel:
     name: Build Kernel
-build-kernel:
- runs-on: ubuntu-22.04
- steps:
-   - name: Checkout with submodules
-     uses: actions/checkout@v4
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        uses: dabao1955/kernel_build_action@main
      with:
        path: msm-4.4  # 强制将代码检出到子目录
        submodules: recursive
