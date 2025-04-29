@@ -8,14 +8,20 @@ jobs:
     name: Build Kernel
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: msm-4.4  # 明确指定代码检出到子目录
+
       - name: Build
         uses: dabao1955/kernel_build_action@main
         with:
           kernel-url: https://github.com/ztemt/NX563J_P_kernel
           kernel-branch: master
-          config: msmcortex-NX563J-perf_defconfig
+          config: arch/arm64/configs/msmcortex-NX563J-perf_defconfig  # 完整相对路径
           arch: arm64
           aosp-gcc: true
           aosp-clang: true
           android-version: 12
           aosp-clang-version: r383902
+          working-directory: msm-4.4  # 关键修复：指定工作目录
