@@ -1,6 +1,10 @@
 name: CI
 
+on:
+  workflow_dispatch:
 jobs:
+  build-kernel:
+    name: Build Kernel
 build-kernel:
  runs-on: ubuntu-22.04
  steps:
